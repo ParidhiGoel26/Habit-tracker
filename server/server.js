@@ -17,32 +17,28 @@ app.use("/api/habits", require("./routes/habit"));
 
 // ================= DATABASE =================
 const connectToAtlas = async () => {
-  const mongoUri = process.env.MONGO_URI;
-
-  if (!mongoUri) {
-    throw new Error("MONGO_URI is missing");
-  }
-
   try {
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 15000,
-      socketTimeoutMS: 45000,
-      family: 4,
-    });
+    if (!process.env.MONGO_URI) {
+      throw new Error("❌ MONGO_URI is missing");
+    }
+
+    await mongoose.connect(process.env.MONGO_URI);
 
     console.log("✅ Atlas DB Connected");
   } catch (err) {
-    console.error("❌ Atlas DB Error:", err.message);
+    console.error("❌ DB Connection Error:", err.message);
     process.exit(1);
   }
 };
 
 // ================= SERVE FRONTEND =================
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/build")));
+  const clientPath = path.join(__dirname, "../client/build");
+
+  app.use(express.static(clientPath));
 
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../client/build/index.html"));
+    res.sendFile(path.join(clientPath, "index.html"));
   });
 }
 
@@ -50,15 +46,11 @@ if (process.env.NODE_ENV === "production") {
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
-  try {
-    await connectToAtlas();
+  await connectToAtlas();
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-    });
-  } catch (err) {
-    process.exit(1);
-  }
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
 };
 
 startServer();
